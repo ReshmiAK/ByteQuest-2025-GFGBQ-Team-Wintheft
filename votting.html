@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrated Voting System</title>
+    <style>
+        /* --- GLOBAL RESET --- */
+        * { box-sizing: border-box; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            font-family: Arial, sans-serif; 
+            overflow: hidden; 
+            height: 100vh; 
+            width: 100vw; 
+            background-color: #333; /* Neutral background for menu */
+        }
+
+        /* --- 1. MAIN MENU (SPLIT SCREEN) --- */
+        #main-menu {
+            display: flex;
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 10;
+        }
+        
+        .menu-option {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 2.5rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* LEFT SIDE - AUDIO */
+        #btn-audio {
+            background-color: #000;
+            color: #00ff00;
+            border-right: 2px solid #555;
+        }
+        #btn-audio:hover { background-color: #111; transform: scale(1.02); z-index: 11; }
+        
+        /* RIGHT SIDE - EYE/CLICK */
+        #btn-visual {
+            background-color: #f0f0f0;
+            color: #333;
+        }
+        #btn-visual:hover { background-color: #fff; transform: scale(1.02); z-index: 11; }
+
+        .icon { font-size: 5rem; margin-bottom: 20px; }
+
+        /* --- 2. VOICE VOTING STYLES (Green Terminal) --- */
+        #voice-app {
+            display: none; /* STRICTLY HIDDEN */
+            height: 100%;
+            width: 100%;
+            background-color: #121212;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 20;
+        }
+
+        #voice-app h1 { font-size: 3rem; margin-bottom: 20px; text-shadow: 0 0 10px #00ff00; }
+
+        #voice-status-box {
+            border: 2px solid #00ff00;
+            padding: 40px;
+            width: 80%;
+            max-width: 600px;
+            background-color: #000;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        #voice-main-status { font-size: 2rem; font-weight: bold; margin-bottom: 10px; }
+        #voice-sub-status { font-size: 1.2rem; color: #ccffcc; }
+        .mic-icon { font-size: 3rem; margin-top: 20px; display: none; }
+        .mic-active { display: block; animation: pulse 1s infinite; }
+        @keyframes pulse { 50% { opacity: 0.5; } }
+
+        /* Voice List (Text only, not buttons) */
+        .voice-list { text-align: left; font-size: 1.5rem; line-height: 2rem; }
+
+        /* --- 3. VISUAL VOTING STYLES (Colorful Grid) --- */
+        #visual-app {
+            display: none; /* STRICTLY HIDDEN */
+            height: 100%;
+            width: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            z-index: 20;
+        }
+
+        #voting-grid {
+            height: 100%;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+        }
+
+        .zone {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 3rem;
+            font-weight: bold;
+            color: white;
+            text-transform: uppercase;
+            cursor: pointer;
+            border: 5px solid white;
+            transition: opacity 0.2s;
+        }
+        .zone:hover { opacity: 0.8; }
+
+        #zone-lotus { background-color: #FF9933; }
+        #zone-hand { background-color: #3399FF; }
+        #zone-ele { background-color: #003399; }
+        #zone-hammer { background-color: #CC0000; }
+
+        /* SHARED ELEMENTS */
+        .back-btn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            padding: 10px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid white;
+            cursor: pointer;
+            z-index: 1000;
+        }
+        .back-btn:hover { background: rgba(255,255,255,0.4); }
+
+        #success-screen {
+            display: none;
+            height: 100%;
+            width: 100%;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background-color: #28a745;
+            color: white;
+            text-align: center;
+            position: absolute;
+            top:0; left:0;
+            z-index: 30;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="main-menu">
+        <div class="menu-option" id="btn-audio" onclick="loadVoiceApp()">
+            <div class="icon">🎙️</div>
+            AUDIO VOTING<br><span style="font-size:1rem; opacity:0.7">(For Blind Users)</span>
+        </div>
+        <div class="menu-option" id="btn-visual" onclick="loadVisualApp()">
+            <div class="icon">👁️</div>
+            VISUAL VOTING<br><span style="font-size:1rem; opacity:0.7">(Eye / Touch)</span>
+        </div>
+    </div>
+
+    <div id="voice-app">
+        <button class="back-btn" onclick="goHome()">🏠 MENU</button>
+        <h1>VOICE VOTING</h1>
+        
+        <div id="voice-status-box">
+            <div id="voice-main-status">SYSTEM READY</div>
+            <div id="voice-sub-status">Say "Start" to begin</div>
+            <div class="mic-icon" id="mic-icon">🎤 Listening...</div>
+        </div>
+
+        <div class="voice-list">
+            <p>1. Lotus</p>
+            <p>2. Hand</p>
+            <p>3. Hammer</p>
+            <p>4. Elephant</p>
+        </div>
+
+        <button onclick="startVoiceSystem()" style="margin-top:20px; padding:15px 30px; font-size:1.2rem; background:#00ff00; border:none; cursor:pointer; font-weight:bold;">START</button>
+    </div>
+
+    <div id="visual-app">
+        <button class="back-btn" onclick="goHome()" style="color:black; background:rgba(255,255,255,0.8); border:1px solid black;">🏠 MENU</button>
+        
+        <div id="voting-grid">
+            <div id="zone-lotus" class="zone" onclick="confirmVote('LOTUS')">🪷 LOTUS</div>
+            <div id="zone-hand" class="zone" onclick="confirmVote('HAND')">✋ HAND</div>
+            <div id="zone-ele" class="zone" onclick="confirmVote('ELEPHANT')">🐘 ELEPHANT</div>
+            <div id="zone-hammer" class="zone" onclick="confirmVote('HAMMER')">⚒️ HAMMER</div>
+        </div>
+    </div>
+
+    <div id="success-screen">
+        <h1 style="font-size: 5rem;">✅ VOTED</h1>
+        <p style="font-size: 2rem;">Vote Registered Successfully.</p>
+        <p id="voted-text" style="font-size: 1.5rem; margin-top: 20px;"></p>
+        <button onclick="goHome()" style="margin-top:30px; padding:10px 20px; font-size:1.5rem; cursor:pointer; border:none; background:white; color:green;">Return to Menu</button>
+    </div>
+
+    <script>
+        // --- NAVIGATION LOGIC (Strict Toggling) ---
+        function loadVoiceApp() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('visual-app').style.display = 'none'; // Force Hide Visual
+            document.getElementById('success-screen').style.display = 'none';
+            
+            document.getElementById('voice-app').style.display = 'flex'; // Show Voice
+            document.body.style.backgroundColor = '#121212';
+        }
+
+        function loadVisualApp() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('voice-app').style.display = 'none'; // Force Hide Voice
+            document.getElementById('success-screen').style.display = 'none';
+
+            document.getElementById('visual-app').style.display = 'block'; // Show Visual
+            document.body.style.backgroundColor = '#333';
+        }
+
+        function goHome() {
+            location.reload(); // Hard reset to clear all states
+        }
+
+        function confirmVote(party) {
+            // Shared Logic for finishing a vote
+            let msg = new SpeechSynthesisUtterance("Successfully voted for " + party);
+            window.speechSynthesis.speak(msg);
+
+            // Hide everything else
+            document.getElementById('voice-app').style.display = 'none';
+            document.getElementById('visual-app').style.display = 'none';
+            
+            // Show Success
+            const successEl = document.getElementById('success-screen');
+            successEl.style.display = 'flex';
+            document.getElementById('voted-text').innerText = "Selected: " + party;
+        }
+
+        // ==========================================
+        // === VOICE RECOGNITION LOGIC ===
+        // ==========================================
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const recognition = new SpeechRecognition();
+        const synth = window.speechSynthesis;
+
+        recognition.continuous = false;
+        recognition.lang = 'en-US';
+        recognition.interimResults = false;
+
+        // Data
+        const candidates = {
+            '1': "Lotus", 'one': "Lotus", 'won': "Lotus",
+            '2': "Hand", 'two': "Hand", 'to': "Hand",
+            '3': "Hammer", 'three': "Hammer", 'tree': "Hammer",
+            '4': "Elephant", 'four': "Elephant", 'for': "Elephant"
+        };
+        const yesWords = ["yes", "yeah", "correct", "right", "sure", "ok", "yep"];
+
+        let voiceState = "IDLE"; 
+        let voiceSelection = "";
+
+        // UI Helpers
+        const vStatusEl = document.getElementById('voice-main-status');
+        const vSubStatusEl = document.getElementById('voice-sub-status');
+        const micIcon = document.getElementById('mic-icon');
+
+        function updateVoiceUI(main, sub) {
+            vStatusEl.innerText = main;
+            vSubStatusEl.innerText = sub;
+        }
+
+        function speak(text, callback) {
+            synth.cancel();
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.rate = 1.1; 
+            utterance.onend = function() { if (callback) callback(); };
+            synth.speak(utterance);
+        }
+
+        function startVoiceSystem() {
+            voiceState = "LISTENING_VOTE";
+            updateVoiceUI("INITIALIZING...", "Please wait");
+            
+            speak("System Ready. Say 1 for Lotus, 2 for Hand, 3 for Hammer, or 4 for Elephant.", () => {
+                listen();
+            });
+        }
+
+        function listen() {
+            try {
+                recognition.start();
+                updateVoiceUI("LISTENING...", "Say your number now");
+                micIcon.classList.add("mic-active");
+            } catch (e) { console.log("Mic busy or active"); }
+        }
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript.toLowerCase();
+            console.log("Heard:", transcript);
+            micIcon.classList.remove("mic-active");
+
+            // Handle "Start" command
+            if (transcript.includes("start") && voiceState === "IDLE") {
+                startVoiceSystem();
+                return;
+            }
+
+            handleVoiceLogic(transcript);
+        };
+
+        recognition.onerror = (event) => {
+            micIcon.classList.remove("mic-active");
+            if (voiceState !== "IDLE") {
+                speak("I didn't hear that. Please try again.", () => listen());
+            }
+        };
+
+        function handleVoiceLogic(text) {
+            if (voiceState === "LISTENING_VOTE") {
+                let found = null;
+                for (let key in candidates) {
+                    if (text.includes(key)) { found = candidates[key]; break; }
+                }
+                if (!found) {
+                    ["Lotus", "Hand", "Hammer", "Elephant"].forEach(name => {
+                        if (text.includes(name.toLowerCase())) found = name;
+                    });
+                }
+
+                if (found) {
+                    voiceSelection = found;
+                    voiceState = "CONFIRMING";
+                    updateVoiceUI(`SELECTED: ${found}`, "Say YES to confirm");
+                    speak(`You chose ${found}. Say YES to confirm.`, () => listen());
+                } else {
+                    speak("Invalid input. Say 1, 2, 3, or 4.", () => listen());
+                }
+
+            } else if (voiceState === "CONFIRMING") {
+                let confirmed = yesWords.some(word => text.includes(word));
+
+                if (confirmed) {
+                    voiceState = "DONE";
+                    confirmVote(voiceSelection); // Use shared success screen
+                } else {
+                    voiceState = "LISTENING_VOTE";
+                    voiceSelection = "";
+                    speak("Cancelled. Say your number.", () => listen());
+                }
+            }
+        }
+    </script>
+</body>
+</html>
