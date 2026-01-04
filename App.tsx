@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { ViewMode } from './types';
-import { PollingBooth } from './views/PollingBooth';
 import { AdminDashboard } from './views/AdminDashboard';
 import { Card } from './components/Shared';
+import AudioVote from './views/AudioVote';
+import VisualVote from './views/VisualVote';
 
 const App: React.FC = () => {
   const [view, setView] = useState<ViewMode>('SPLASH');
+  const [mode, setMode] = useState<'CHOICE' | 'AUDIO' | 'VISUAL'>('CHOICE');
 
   const renderSplash = () => (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
@@ -20,7 +22,10 @@ const App: React.FC = () => {
 
         <div className="space-y-4">
           <button 
-            onClick={() => setView('BOOTH')}
+            onClick={() => {
+              setView('BOOTH');
+              setMode('CHOICE');
+            }}
             className="w-full group relative flex items-center p-4 border-2 border-slate-100 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition-all text-left bg-slate-50"
           >
             <div className="bg-white p-3 rounded-lg text-blue-600 mr-4 shadow-sm group-hover:bg-blue-500 group-hover:text-white transition-colors border border-slate-100">
@@ -56,7 +61,57 @@ const App: React.FC = () => {
   return (
     <>
       {view === 'SPLASH' && renderSplash()}
-      {view === 'BOOTH' && <PollingBooth onExit={() => setView('SPLASH')} />}
+      {view === 'BOOTH' && (
+        mode === 'CHOICE' ? (
+          <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <Card className="max-w-2xl w-full p-8 text-center bg-white border border-slate-200 shadow-2xl">
+              <div className="mb-6 inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                System Online
+              </div>
+              <h1 className="text-3xl font-black text-slate-900 mb-8">Official Polling Booth</h1>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                <button
+                  onClick={() => setMode('AUDIO')}
+                  className="rounded-xl bg-blue-600 text-white py-6 px-4 font-semibold text-lg shadow-lg hover:bg-blue-700 transition flex flex-col items-center"
+                >
+                  <span className="text-2xl mb-2">🔊</span>
+                  <span>Start with Audio</span>
+                  <span className="text-xs opacity-80 mt-1">Audio ke saath shuru karein</span>
+                </button>
+                <button
+                  onClick={() => setMode('VISUAL')}
+                  className="rounded-xl bg-white text-slate-900 border border-slate-200 py-6 px-4 font-semibold text-lg shadow-sm hover:border-slate-400 transition flex flex-col items-center"
+                >
+                  <span className="text-2xl mb-2">👁️</span>
+                  <span>Start (Visual Only)</span>
+                  <span className="text-xs text-slate-500 mt-1">Sirf dekhkar shuru karein</span>
+                </button>
+              </div>
+              <button
+                onClick={() => setView('SPLASH')}
+                className="text-xs text-slate-400 hover:text-slate-600"
+              >
+                Back to main menu
+              </button>
+            </Card>
+          </div>
+        ) : mode === 'AUDIO' ? (
+          <AudioVote
+            onDone={() => {
+              setMode('CHOICE');
+              setView('SPLASH');
+            }}
+          />
+        ) : (
+          <VisualVote
+            onDone={() => {
+              setMode('CHOICE');
+              setView('SPLASH');
+            }}
+          />
+        )
+      )}
       {view === 'ADMIN' && <AdminDashboard onLogout={() => setView('SPLASH')} />}
     </>
   );

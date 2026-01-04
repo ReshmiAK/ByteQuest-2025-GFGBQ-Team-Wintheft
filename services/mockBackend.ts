@@ -268,6 +268,20 @@ class MockBackendService extends EventTarget {
     return { ...this.tally };
   }
 
+  // Allows trusted in-app flows (like accessibility UIs) to cast a vote
+  // directly without going through the WebSocket path, while still
+  // updating the encrypted ballot box and admin tally.
+  public async castDirectVote(candidateId: string): Promise<{ receiptHash: string }> {
+    if (!this.candidates.find(c => c.id === candidateId)) {
+      throw new Error('Invalid candidate');
+    }
+    // Update aggregated tally in the same way as the WebSocket codepath
+    this.updateTally(candidateId);
+    // Use a synthetic encrypted payload; its contents are opaque to admins
+    const encryptedPayload = `DIRECT|${candidateId}|${crypto.randomUUID()}`;
+    return this.castVoteEncrypted(encryptedPayload, 'DIRECT-UI');
+  }
+
   private updateTally(candidateId: string) {
     if (!this.tally[candidateId]) {
       this.tally[candidateId] = 0;

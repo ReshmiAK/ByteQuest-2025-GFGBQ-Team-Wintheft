@@ -19,19 +19,19 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     audioGuide: false,
     language: 'en'
   });
-  
+
   // Voting State
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [voterId, setVoterId] = useState('');
   const [receipt, setReceipt] = useState<string>('');
-  
+
   // Connection & Crypto State
   const [status, setStatus] = useState<ConnectionStatus>('CONNECTING');
   const [socket, setSocket] = useState<MockSocket | null>(null);
   const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
   const [serverPublicKey, setServerPublicKey] = useState<CryptoKey | null>(null);
-  
+
   const heartbeatRef = useRef<number | null>(null);
   const boothIdRef = useRef<string>(`BOOTH-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
 
@@ -46,12 +46,12 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
       ws.onopen = () => {
         setStatus('AUTHENTICATING');
-        ws.send(JSON.stringify({ 
-          type: 'AUTH', 
-          payload: { 
-            boothId: boothIdRef.current, 
-            secret: 'x-secure-token' 
-          } 
+        ws.send(JSON.stringify({
+          type: 'AUTH',
+          payload: {
+            boothId: boothIdRef.current,
+            secret: 'x-secure-token'
+          }
         }));
       };
 
@@ -101,7 +101,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         }
         if (socket) startHeartbeat(socket);
         break;
-        
+
       case 'AUTH_FAILED':
         alert("Booth Authentication Failed. Contact Admin.");
         break;
@@ -118,7 +118,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       case 'ELECTION_STOPPED':
         setStatus('LOCKED');
         break;
-        
+
       case 'LOCK_BOOTH':
         setStatus('LOCKED');
         break;
@@ -139,7 +139,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
   // Re-attach heartbeat
   useEffect(() => {
     if (socket && (status === 'ONLINE' || status === 'LOCKED')) {
-       startHeartbeat(socket);
+      startHeartbeat(socket);
     }
   }, [socket, status]);
 
@@ -152,7 +152,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
     try {
       if (settings.audioGuide) tts.speak("Encrypting and submitting your vote. Please wait.");
-      
+
       // 1. Prepare Payload: Candidate ID + Salt + Timestamp
       const salt = crypto.randomUUID();
       const timestamp = Date.now();
@@ -166,7 +166,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       // vote payload contains no trace of the voterId.
       socket.send(JSON.stringify({
         type: 'VOTE',
-        payload: { encryptedPayload } 
+        payload: { encryptedPayload }
       }));
 
     } catch (e) {
@@ -181,7 +181,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     setVoterId('');
     setReceipt('');
     setSelectedCandidate(null);
-    setSettings(prev => ({ ...prev, audioGuide: false })); 
+    setSettings(prev => ({ ...prev, audioGuide: false }));
     tts.cancel();
   };
 
@@ -208,10 +208,9 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
   }, [step, settings.audioGuide, status]);
 
   // Dynamic Styles
-  const containerClass = `min-h-screen w-full flex flex-col transition-colors duration-300 ${
-    settings.highContrast ? 'bg-black text-yellow-400' : 'bg-slate-50 text-slate-900'
-  }`;
-  
+  const containerClass = `min-h-screen w-full flex flex-col transition-colors duration-300 ${settings.highContrast ? 'bg-black text-yellow-400' : 'bg-slate-50 text-slate-900'
+    }`;
+
   const headingClass = `font-bold mb-6 ${settings.largeText ? 'text-5xl' : 'text-3xl'}`;
   const textClass = `mb-4 ${settings.largeText ? 'text-2xl' : 'text-lg'}`;
 
@@ -224,7 +223,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         <h2 className="text-xl font-mono">Connecting to Secure Server...</h2>
         <p className="text-sm text-slate-500 mt-2">{status}...</p>
         {!serverPublicKey && status === 'AUTHENTICATING' && (
-           <p className="text-xs text-blue-400 mt-4 animate-pulse">Exchanging Cryptographic Keys...</p>
+          <p className="text-xs text-blue-400 mt-4 animate-pulse">Exchanging Cryptographic Keys...</p>
         )}
       </div>
     );
@@ -243,23 +242,23 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
   if (status === 'LOCKED') {
     return (
-       <div className="min-h-screen bg-slate-800 flex flex-col items-center justify-center text-white p-8 text-center">
-         <div className="text-6xl mb-6">🔒</div>
-         <h1 className="text-4xl font-bold mb-4">Booth Locked</h1>
-         <p className="text-xl text-slate-400">Waiting for Election Administrator...</p>
-         <div className="mt-8 flex gap-4">
-           <div className="px-4 py-2 bg-slate-700 rounded text-xs font-mono">ID: {boothIdRef.current}</div>
-           <div className="px-4 py-2 bg-slate-700 rounded text-xs font-mono">
-             Ping: {Date.now() - lastHeartbeat}ms
-           </div>
-         </div>
-         <Button variant="secondary" className="mt-8" onClick={onExit}>Exit App</Button>
-       </div>
+      <div className="min-h-screen bg-slate-800 flex flex-col items-center justify-center text-white p-8 text-center">
+        <div className="text-6xl mb-6">🔒</div>
+        <h1 className="text-4xl font-bold mb-4">Booth Locked</h1>
+        <p className="text-xl text-slate-400">Waiting for Election Administrator...</p>
+        <div className="mt-8 flex gap-4">
+          <div className="px-4 py-2 bg-slate-700 rounded text-xs font-mono">ID: {boothIdRef.current}</div>
+          <div className="px-4 py-2 bg-slate-700 rounded text-xs font-mono">
+            Ping: {Date.now() - lastHeartbeat}ms
+          </div>
+        </div>
+        <Button variant="secondary" className="mt-8" onClick={onExit}>Exit App</Button>
+      </div>
     );
   }
 
   // Voting Screens
-  
+
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center flex-1 p-8 text-center animate-fade-in">
       <div className="mb-4 inline-flex items-center gap-2 px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider">
@@ -269,17 +268,17 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       <h1 className={`${headingClass} mb-12`}>
         {settings.language === 'en' ? 'Official Polling Booth' : 'Adhikarik Matdaan Kendra'}
       </h1>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-2xl mb-12">
-        <Button 
-          size="xl" 
+        <Button
+          size="xl"
           highContrast={settings.highContrast}
           onClick={() => {
             setSettings(prev => ({ ...prev, audioGuide: true }));
             tts.setEnabled(true);
             setTimeout(() => {
-               tts.speakDual("Starting System. Please verify your identity.", "System shuru ho raha hai. Kripya apni pehchan satyapit karein.");
-               setStep('AUTH');
+              tts.speakDual("Starting System. Please verify your identity.", "System shuru ho raha hai. Kripya apni pehchan satyapit karein.");
+              setStep('AUTH');
             }, 500);
           }}
         >
@@ -290,8 +289,8 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
           </div>
         </Button>
 
-        <Button 
-          size="xl" 
+        <Button
+          size="xl"
           variant="secondary"
           highContrast={settings.highContrast}
           onClick={() => {
@@ -313,7 +312,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     <div className="flex flex-col items-center justify-center flex-1 p-8 max-w-2xl mx-auto w-full">
       <h2 className={headingClass}>Voter Authentication</h2>
       <p className={textClass}>Enter your Voter Token or scan QR code.</p>
-      
+
       <input
         type="text"
         value={voterId}
@@ -321,16 +320,16 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         placeholder="Enter Token (e.g. 1234)"
         className={`
           w-full p-6 text-3xl font-mono text-center tracking-widest rounded-lg border-4 mb-8 focus:outline-none
-          ${settings.highContrast 
-            ? 'bg-black border-yellow-400 text-yellow-400 placeholder-yellow-400/50 focus:ring-4 focus:ring-yellow-300' 
+          ${settings.highContrast
+            ? 'bg-black border-yellow-400 text-yellow-400 placeholder-yellow-400/50 focus:ring-4 focus:ring-yellow-300'
             : 'bg-white border-blue-200 text-slate-800 focus:border-blue-500 focus:ring-4 focus:ring-blue-200'}
         `}
         aria-label="Voter Token Input"
         autoFocus
       />
 
-      <Button 
-        size="xl" 
+      <Button
+        size="xl"
         highContrast={settings.highContrast}
         disabled={voterId.length < 3}
         onClick={() => {
@@ -354,8 +353,8 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
           { key: 'largeText', label: 'Large Text', desc: 'Increase font size', icon: <span className="text-2xl font-bold">Aa</span> },
           { key: 'audioGuide', label: 'Audio Instructions', desc: 'Read out screen content', icon: <IconSpeaker /> },
         ].map((opt) => (
-          <Card 
-            key={opt.key} 
+          <Card
+            key={opt.key}
             highContrast={settings.highContrast}
             onClick={() => {
               setSettings(prev => ({ ...prev, [opt.key]: !prev[opt.key as keyof VoterSettings] }));
@@ -378,8 +377,8 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       </div>
 
       <div className="flex justify-end mt-auto">
-        <Button 
-          size="xl" 
+        <Button
+          size="xl"
           highContrast={settings.highContrast}
           onClick={() => {
             if (settings.audioGuide) tts.speak("Proceeding to ballot. Select a candidate.");
@@ -403,14 +402,14 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 gap-6 overflow-y-auto pb-20">
         {candidates.map(candidate => (
-          <Card 
+          <Card
             key={candidate.id}
             highContrast={settings.highContrast}
             tabIndex={0}
             className={`
               relative overflow-hidden group border-4
-              ${selectedCandidate?.id === candidate.id 
-                ? (settings.highContrast ? 'border-yellow-400 bg-gray-900' : 'border-blue-600 bg-blue-50') 
+              ${selectedCandidate?.id === candidate.id
+                ? (settings.highContrast ? 'border-yellow-400 bg-gray-900' : 'border-blue-600 bg-blue-50')
                 : 'border-transparent'}
             `}
             onClick={() => {
@@ -439,16 +438,16 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       </div>
 
       <div className="fixed bottom-0 left-0 w-full p-6 bg-inherit border-t border-current/10 flex justify-between items-center z-10">
-        <Button 
-           variant="secondary"
-           size="lg"
-           highContrast={settings.highContrast}
-           onClick={() => setStep('ASSISTANCE')}
+        <Button
+          variant="secondary"
+          size="lg"
+          highContrast={settings.highContrast}
+          onClick={() => setStep('ASSISTANCE')}
         >
           Back
         </Button>
-        <Button 
-          size="xl" 
+        <Button
+          size="xl"
           highContrast={settings.highContrast}
           disabled={!selectedCandidate}
           onClick={() => setStep('CONFIRM')}
@@ -475,7 +474,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       )}
 
       <div className="flex gap-6 w-full">
-        <Button 
+        <Button
           variant="secondary"
           size="xl"
           className="flex-1"
@@ -484,8 +483,8 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         >
           Change Selection
         </Button>
-        <Button 
-          size="xl" 
+        <Button
+          size="xl"
           variant="success"
           className="flex-1"
           highContrast={settings.highContrast}
@@ -503,7 +502,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       <div className="w-24 h-24 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-8">
         <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
       </div>
-      
+
       <h2 className={headingClass}>Vote Cast Successfully!</h2>
       <p className={textClass}>Your vote has been encrypted and stored anonymously.</p>
 
@@ -514,8 +513,8 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
       <p className="text-sm opacity-60 mb-12">System will reset automatically in 5 seconds.</p>
 
-      <Button 
-        size="lg" 
+      <Button
+        size="lg"
         highContrast={settings.highContrast}
         onClick={resetBooth}
       >
@@ -534,7 +533,7 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
             WS-SECURE
           </div>
         )}
-        <button 
+        <button
           onClick={() => setSettings(s => ({ ...s, highContrast: !s.highContrast }))}
           className={`p-2 rounded-full border-2 ${settings.highContrast ? 'border-yellow-400 bg-black text-yellow-400' : 'border-gray-800 bg-white text-gray-800'}`}
           aria-label="Toggle High Contrast"
