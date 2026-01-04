@@ -12,17 +12,16 @@ export interface Candidate {
   id: string;
   name: string;
   party: string;
-  symbol: string; // Emoji or image URL placeholder
+  symbol: string;
   color: string;
 }
 
 export interface Vote {
   id: string;
-  // candidateId removed to ensure individual votes cannot be inspected by admin
-  encryptedPayload: string; // The actual secure vote
+  encryptedPayload: string;
   timestamp: number;
-  voteHash: string; // Simulates encrypted vote
-  boothId: string; // Track origin booth, but not the voter
+  voteHash: string;
+  boothId: string;
 }
 
 export interface VoterSettings {
@@ -44,8 +43,6 @@ export interface AdminUser {
   username: string;
   role: 'admin';
 }
-
-// --- WebSocket Protocol Types ---
 
 export type ConnectionStatus = 'CONNECTING' | 'AUTHENTICATING' | 'ONLINE' | 'LOCKED' | 'OFFLINE' | 'RECONNECTING';
 

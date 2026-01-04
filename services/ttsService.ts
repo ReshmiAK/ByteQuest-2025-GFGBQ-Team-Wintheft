@@ -18,10 +18,6 @@ export class TTSService {
     this.synth.cancel();
     this.isSpeaking = false;
   }
-
-  /**
-   * Speaks the primary text in English, then automatically follows up with secondary text in Hindi.
-   */
   public speakDual(englishText: string, hindiText: string) {
     if (!this.enabled) return;
     this.cancel();
@@ -52,7 +48,6 @@ export class TTSService {
   }
 
   public announce(text: string) {
-    // For aria-live announcements that should also be spoken if audio is on
     if (this.enabled) {
       this.speak(text);
     }

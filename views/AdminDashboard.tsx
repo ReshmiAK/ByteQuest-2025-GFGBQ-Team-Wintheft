@@ -15,13 +15,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
 
-  // New Candidate Form State
   const [newName, setNewName] = useState('');
   const [newParty, setNewParty] = useState('');
   const [newSymbol, setNewSymbol] = useState('');
   const [newColor, setNewColor] = useState('#3b82f6');
 
-  // Force re-render periodically to update "Last seen" times
   const [, setTick] = useState(0);
 
   const fetchData = () => {
@@ -35,8 +33,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       fetchData();
       const handler = () => fetchData();
       backend.addEventListener('update', handler);
-      
-      // Update relative time displays
       const timer = setInterval(() => setTick(t => t + 1), 5000);
       
       return () => {
@@ -68,7 +64,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
 
     setNewName('');
     setNewSymbol('');
-    // Keep party and color as they might be adding multiple from same party
   };
 
   if (!isAuthenticated) {
@@ -120,7 +115,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
       </header>
 
       <main className="max-w-7xl mx-auto p-6 space-y-6">
-        {/* Controls Row */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Card className="flex flex-col items-center justify-center p-8 bg-slate-50 border border-slate-200 shadow-sm">
             <div className="text-sm uppercase tracking-wider text-slate-500 font-semibold mb-2">Total Votes Cast</div>
@@ -164,7 +158,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </Card>
         </div>
 
-        {/* Real-time Chart */}
         {state?.isActive && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <Card className="lg:col-span-2 p-6 h-[500px] border border-slate-200 shadow-sm">
@@ -202,7 +195,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
                 ) : (
                   booths.map(booth => {
                     const secondsAgo = Math.floor((Date.now() - booth.lastHeartbeat) / 1000);
-                    const isOnline = booth.status === 'ONLINE' && secondsAgo < 15; // Strict timeout check
+                    const isOnline = booth.status === 'ONLINE' && secondsAgo < 15;
                     
                     return (
                       <div key={booth.id} className="flex items-center justify-between p-3 bg-slate-50 rounded border border-slate-200">
@@ -232,10 +225,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
           </div>
         )}
 
-        {/* Election Configuration Area */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
-          {/* Add Candidate Form (Only when Inactive) */}
           {!state?.isActive && (
             <Card className="lg:col-span-4 border border-blue-200 shadow-sm bg-blue-50/50">
               <h3 className="text-lg font-bold mb-4 text-blue-900">Add Candidate</h3>
@@ -266,7 +257,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ onLogout }) => {
             </Card>
           )}
 
-          {/* Candidate List */}
           <Card className={`${!state?.isActive ? 'lg:col-span-8' : 'lg:col-span-12'} border border-slate-200 shadow-sm`}>
             <h3 className="text-lg font-bold mb-4">Ballot Candidates</h3>
             {state?.candidates.length === 0 ? (

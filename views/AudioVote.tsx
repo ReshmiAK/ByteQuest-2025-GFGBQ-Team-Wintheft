@@ -3,7 +3,6 @@ import { Card, Button } from '../components/Shared';
 import { backend } from '../services/mockBackend';
 import type { Candidate } from '../types';
 
-// Map spoken variants to numbers (1-based)
 const numberMap: Record<string, number> = {
   '1': 1, 'one': 1, 'won': 1, 'on': 1, '11': 1, '111': 1,
   '2': 2, 'two': 2, 'to': 2, 'too': 2, 'tu': 2, '22': 2,
@@ -27,10 +26,8 @@ export const AudioVote: React.FC<Props> = ({ onDone }) => {
   const [receipt, setReceipt] = useState<string | null>(null);
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [showConfirm, setShowConfirm] = useState(false);
-  // Holds the SpeechRecognition constructor (or webkitSpeechRecognition)
   const recognitionRef = useRef<any | null>(null);
 
-  // Simple TTS helper
   const speak = (text: string) => {
     try {
       const synth = window.speechSynthesis;
@@ -40,7 +37,6 @@ export const AudioVote: React.FC<Props> = ({ onDone }) => {
       synth.cancel();
       synth.speak(utt);
     } catch {
-      // ignore
     }
   };
 
@@ -52,7 +48,6 @@ export const AudioVote: React.FC<Props> = ({ onDone }) => {
       setStatus('Your browser does not support speech recognition. Try Chrome on desktop.');
       return;
     }
-    // Store the constructor so we can create a fresh instance for each listen
     recognitionRef.current = SpeechRecognition;
 
     const syncCandidates = () => {
@@ -90,8 +85,6 @@ export const AudioVote: React.FC<Props> = ({ onDone }) => {
         resolve(null);
       };
       rec.onend = () => {
-        // If nothing was recognized and no explicit error fired, resolve null
-        // so the calling code can re-prompt the voter.
         resolve(null);
       };
 
@@ -145,7 +138,7 @@ export const AudioVote: React.FC<Props> = ({ onDone }) => {
     }
     const options = list.slice(0, 4);
     speak('System ready.');
-    const gapMs = 1500; // 1.5 seconds between instructions
+    const gapMs = 1500;
     options.forEach((candidate, idx) => {
       const num = idx + 1;
       setTimeout(

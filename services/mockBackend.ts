@@ -1,26 +1,19 @@
 import { Candidate, ElectionState, Vote, SocketMessage, ConnectedBooth } from '../types';
 import { cryptoService } from './cryptoService';
 
-// Initial Mock Data (used only if no local storage exists)
 const INITIAL_CANDIDATES: Candidate[] = [
   { id: 'c1', name: 'Sarah Jenkins', party: 'Progressive Alliance', symbol: '🦅', color: '#3b82f6' },
   { id: 'c2', name: 'Rajiv Kumar', party: 'National Conservatives', symbol: '🦁', color: '#ef4444' },
 ];
-
-/**
- * Simulates a standard WebSocket client.
- * Connects to the "Server" (MockBackendService) in memory.
- */
 export class MockSocket {
   onopen: (() => void) | null = null;
   onmessage: ((event: { data: string }) => void) | null = null;
   onclose: (() => void) | null = null;
   onerror: ((error: any) => void) | null = null;
-  readyState: number = 0; // 0: CONNECTING, 1: OPEN, 3: CLOSED
+  readyState: number = 0;
   boothId: string | null = null;
 
   constructor(private server: MockBackendService) {
-    // Simulate network connection delay
     setTimeout(() => {
       this.readyState = 1;
       this.server._registerSocket(this);
@@ -40,7 +33,6 @@ export class MockSocket {
     if (this.onclose) this.onclose();
   }
 
-  // Called by server to push data to client
   _receive(msg: SocketMessage) {
     if (this.readyState === 1 && this.onmessage) {
       this.onmessage({ data: JSON.stringify(msg) });
@@ -49,15 +41,14 @@ export class MockSocket {
 }
 
 class MockBackendService extends EventTarget {
-  private votes: Vote[] = []; // The immutable ballot box (Encrypted only)
-  private tally: Record<string, number> = {}; // The aggregated results
+  private votes: Vote[] = [];
+  private tally: Record<string, number> = {};
   private candidates: Candidate[] = [];
   private isActive: boolean = false;
   private channel: BroadcastChannel;
   private connectedSockets: MockSocket[] = [];
   private booths: Record<string, ConnectedBooth> = {};
   
-  // Crypto Keys
   private privateKey: CryptoKey | null = null;
   private publicKey: CryptoKey | null = null;
   private publicKeyJwk: JsonWebKey | null = null;
@@ -66,7 +57,6 @@ class MockBackendService extends EventTarget {
     super();
     this.channel = new BroadcastChannel('securevote_evs_sync');
     
-    // Listen for updates from other tabs
     this.channel.onmessage = (event) => {
       if (event.data.type === 'SYNC_STATE') {
         this.loadFromStorage();
@@ -94,10 +84,7 @@ class MockBackendService extends EventTarget {
     }
   }
 
-  // --- Cryptography Initialization ---
-
   private async initKeys() {
-    // Try to load keys from storage to persist across reloads
     const storedPriv = localStorage.getItem('evs_priv_key');
     const storedPub = localStorage.getItem('evs_pub_key');
 
@@ -106,7 +93,6 @@ class MockBackendService extends EventTarget {
       this.publicKey = await cryptoService.importKey(JSON.parse(storedPub), 'public');
       this.publicKeyJwk = JSON.parse(storedPub);
     } else {
-      // Generate new Election Keys
       const keyPair = await cryptoService.generateKeyPair();
       this.privateKey = keyPair.privateKey;
       this.publicKey = keyPair.publicKey;
@@ -119,8 +105,6 @@ class MockBackendService extends EventTarget {
       localStorage.setItem('evs_pub_key', JSON.stringify(pubJwk));
     }
   }
-
-  // --- Socket Management ---
 
   public connect(): MockSocket {
     return new MockSocket(this);
@@ -145,12 +129,11 @@ class MockBackendService extends EventTarget {
             socket.boothId = msg.payload.boothId;
             this._updateBoothStatus(socket.boothId!, 'ONLINE');
 
-            // Send AUTH success AND Public Key for encryption
             socket._receive({ 
               type: 'AUTH_SUCCESS', 
               payload: { 
                 serverTime: Date.now(),
-                publicKey: this.publicKeyJwk // Distribute Public Key
+                publicKey: this.publicKeyJwk
               } 
             });
 
@@ -173,29 +156,21 @@ class MockBackendService extends EventTarget {
 
         case 'VOTE':
           try {
-            // New Secure Flow:
-            // 1. Receive Encrypted Blob & Booth ID. NO VOTER ID.
             const { encryptedPayload } = msg.payload;
             const boothId = socket.boothId;
 
             if (!boothId) throw new Error("Unauthenticated Booth");
             if (!this.privateKey) throw new Error("Server Encryption Error");
             
-            // SIMULATED TRUSTED TALLY SERVICE:
-            // Decrypt ONLY to update aggregate count. 
-            // The decrypted candidate ID is NEVER stored with the vote record.
             const decryptedString = await cryptoService.decrypt(encryptedPayload, this.privateKey);
             const [candidateId, salt, timestamp] = decryptedString.split('|');
 
-            // Verify Candidate Exists
             if (!this.candidates.find(c => c.id === candidateId)) {
                throw new Error("Invalid Candidate");
             }
 
-            // Update Aggregated Tally (Anonymized)
             this.updateTally(candidateId);
 
-            // Store Encrypted Vote (Immutable Ballot Box)
             const receipt = await this.castVoteEncrypted(encryptedPayload, boothId);
             
             socket._receive({ type: 'VOTE_ACK', payload: receipt });
@@ -224,8 +199,6 @@ class MockBackendService extends EventTarget {
     };
     this._persistBooths();
   }
-
-  // --- Core Logic ---
 
   private loadFromStorage() {
     const savedVotes = localStorage.getItem('evs_votes');
@@ -263,21 +236,14 @@ class MockBackendService extends EventTarget {
   }
 
   public getVotesForAdmin(): Record<string, number> {
-    // Returns the aggregated tally. 
-    // Impossible to derive individual votes from this structure.
     return { ...this.tally };
   }
 
-  // Allows trusted in-app flows (like accessibility UIs) to cast a vote
-  // directly without going through the WebSocket path, while still
-  // updating the encrypted ballot box and admin tally.
   public async castDirectVote(candidateId: string): Promise<{ receiptHash: string }> {
     if (!this.candidates.find(c => c.id === candidateId)) {
       throw new Error('Invalid candidate');
     }
-    // Update aggregated tally in the same way as the WebSocket codepath
     this.updateTally(candidateId);
-    // Use a synthetic encrypted payload; its contents are opaque to admins
     const encryptedPayload = `DIRECT|${candidateId}|${crypto.randomUUID()}`;
     return this.castVoteEncrypted(encryptedPayload, 'DIRECT-UI');
   }
@@ -292,17 +258,16 @@ class MockBackendService extends EventTarget {
   public async castVoteEncrypted(encryptedPayload: string, boothId: string): Promise<{ receiptHash: string }> {
     this.loadFromStorage();
     if (!this.isActive) throw new Error("Election is closed.");
-    
-    await new Promise(resolve => setTimeout(resolve, 800)); // Latency
 
-    // Generate Receipt Hash (SHA-256 of encrypted payload + timestamp)
+    await new Promise(resolve => setTimeout(resolve, 800));
+
     const timestamp = Date.now();
     const receiptData = `${encryptedPayload}-${timestamp}`;
     const voteHash = await cryptoService.hash(receiptData);
 
     const newVote: Vote = {
       id: crypto.randomUUID(),
-      encryptedPayload: encryptedPayload, // The source of truth
+      encryptedPayload: encryptedPayload,
       timestamp,
       voteHash,
       boothId
@@ -335,7 +300,6 @@ class MockBackendService extends EventTarget {
       id: crypto.randomUUID()
     };
     this.candidates.push(newCandidate);
-    // Initialize tally for new candidate
     this.tally[newCandidate.id] = 0;
     this._persist();
   }

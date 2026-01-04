@@ -6,16 +6,16 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   highContrast?: boolean;
 }
 
-export const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  variant = 'primary', 
-  size = 'md', 
+export const Button: React.FC<ButtonProps> = ({
+  children,
+  variant = 'primary',
+  size = 'md',
   highContrast,
   className = '',
-  ...props 
+  ...props
 }) => {
   const baseStyle = "inline-flex items-center justify-center font-bold rounded-lg transition-all focus:outline-none focus:ring-4 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95";
-  
+
   const sizeStyles = {
     md: "px-4 py-2 text-base",
     lg: "px-6 py-3 text-lg",
@@ -35,7 +35,7 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   return (
-    <button 
+    <button
       className={`${baseStyle} ${sizeStyles[size]} ${variants[variant]} ${className}`}
       {...props}
     >
@@ -52,14 +52,14 @@ export const Card: React.FC<{
   tabIndex?: number;
 }> = ({ children, highContrast, className = '', onClick, tabIndex }) => {
   return (
-    <div 
+    <div
       onClick={onClick}
       tabIndex={tabIndex}
       className={`
         rounded-xl p-6 transition-all 
         ${onClick ? 'cursor-pointer hover:scale-[1.02] active:scale-[0.98]' : ''}
-        ${highContrast 
-          ? 'bg-black border-4 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]' 
+        ${highContrast
+          ? 'bg-black border-4 border-yellow-400 text-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]'
           : 'bg-white border border-gray-100 text-gray-800 shadow-xl shadow-slate-200/50'}
         ${className}
       `}
@@ -68,8 +68,6 @@ export const Card: React.FC<{
     </div>
   );
 };
-
-// Icons
 export const IconCheck = () => (
   <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
 );

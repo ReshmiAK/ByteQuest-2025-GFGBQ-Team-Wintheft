@@ -29,7 +29,6 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
   const hasVotedRef = useRef(false);
 
   useEffect(() => {
-    // Load candidates and keep in sync with admin changes
     const syncCandidates = () => {
       setCandidates(backend.getCandidates());
     };
@@ -45,7 +44,6 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
           videoRef.current.srcObject = stream;
           await videoRef.current.play();
         }
-        // Camera is working, clear any previous error message
         setError(null);
       } catch (err) {
         console.error(err);
@@ -69,7 +67,6 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
         }
         const landmarks = results.multiFaceLandmarks[0];
 
-        // Use iris landmarks around the right eye (approx 474-477 in Python).
         const irisIndices = [468, 469, 470, 471];
         let ix = 0;
         let iy = 0;
@@ -90,21 +87,17 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
         const zone: ZoneIndex | null = (() => {
           const midX = container.width / 2;
           const midY = container.height / 2;
-          if (px < midX && py < midY) return 0; // top-left
-          if (px >= midX && py < midY) return 1; // top-right
-          if (px < midX && py >= midY) return 2; // bottom-left
-          return 3; // bottom-right
+          if (px < midX && py < midY) return 0;
+          if (px >= midX && py < midY) return 1;
+          if (px < midX && py >= midY) return 2;
+          return 3;
         })();
 
         setHoverZone(zone);
         setSelected(zone);
-
-        // Blink detection: distance between eyelid landmarks (similar to Python).
         const top = landmarks[159];
         const bottom = landmarks[145];
         const blinkDist = Math.hypot(top.x - bottom.x, top.y - bottom.y);
-        // Browser FaceMesh can report slightly different scales than the
-        // original Python implementation; use a more forgiving threshold.
         const BLINK_THRESHOLD = 0.01;
 
         if (blinkDist < BLINK_THRESHOLD) {
@@ -113,10 +106,7 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
           blinkCounterRef.current = 0;
         }
 
-        // Require the eye to stay "closed" for a short period to avoid
-        // accidental triggers (~10 frames ≈ ~0.15s at 60fps).
         if (!hasVotedRef.current && zone && blinkCounterRef.current > 10) {
-          // Long blink in a zone = ask for confirmation
           hasVotedRef.current = true;
           setPendingChoice(zone);
           setShowConfirm(true);
@@ -133,7 +123,6 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
         try {
           await faceMesh.send({ image: videoRef.current });
         } catch {
-          // ignore occasional send errors
         }
         requestAnimationFrame(loop);
       };
@@ -172,10 +161,8 @@ export const VisualVote: React.FC<Props> = ({ onDone }) => {
       setShowConfirm(false);
       setConfirmed(true);
       await castVote(pendingChoice);
-      // After showing confirmation and receipt briefly, return to previous page
       setTimeout(onDone, 3000);
     } finally {
-      // lock further votes in this session
       hasVotedRef.current = true;
     }
   };

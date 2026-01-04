@@ -19,14 +19,11 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     audioGuide: false,
     language: 'en'
   });
-
-  // Voting State
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [selectedCandidate, setSelectedCandidate] = useState<Candidate | null>(null);
   const [voterId, setVoterId] = useState('');
   const [receipt, setReceipt] = useState<string>('');
 
-  // Connection & Crypto State
   const [status, setStatus] = useState<ConnectionStatus>('CONNECTING');
   const [socket, setSocket] = useState<MockSocket | null>(null);
   const [lastHeartbeat, setLastHeartbeat] = useState<number>(Date.now());
@@ -34,8 +31,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
   const heartbeatRef = useRef<number | null>(null);
   const boothIdRef = useRef<string>(`BOOTH-${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`);
-
-  // Initialize WebSocket Connection
   useEffect(() => {
     let ws: MockSocket;
 
@@ -94,7 +89,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
   const handleSocketMessage = async (msg: SocketMessage) => {
     switch (msg.type) {
       case 'AUTH_SUCCESS':
-        // Import the Public Key sent by server for encryption
         if (msg.payload.publicKey) {
           const key = await cryptoService.importKey(msg.payload.publicKey, 'public');
           setServerPublicKey(key);
@@ -135,8 +129,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         break;
     }
   };
-
-  // Re-attach heartbeat
   useEffect(() => {
     if (socket && (status === 'ONLINE' || status === 'LOCKED')) {
       startHeartbeat(socket);
@@ -152,18 +144,10 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
     try {
       if (settings.audioGuide) tts.speak("Encrypting and submitting your vote. Please wait.");
-
-      // 1. Prepare Payload: Candidate ID + Salt + Timestamp
       const salt = crypto.randomUUID();
       const timestamp = Date.now();
       const rawData = `${selectedCandidate.id}|${salt}|${timestamp}`;
-
-      // 2. Encrypt using Server's Public Key (Client side encryption)
       const encryptedPayload = await cryptoService.encrypt(rawData, serverPublicKey);
-
-      // 3. Send Encrypted Blob. NO VOTER ID SENT HERE.
-      // Anonymity Principle: The connection is authenticated as a booth, but the specific 
-      // vote payload contains no trace of the voterId.
       socket.send(JSON.stringify({
         type: 'VOTE',
         payload: { encryptedPayload }
@@ -174,8 +158,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       alert("Secure encryption failed. Please try again.");
     }
   };
-
-  // Reset Logic
   const resetBooth = () => {
     setStep('WELCOME');
     setVoterId('');
@@ -184,8 +166,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     setSettings(prev => ({ ...prev, audioGuide: false }));
     tts.cancel();
   };
-
-  // Auto-reset timer
   useEffect(() => {
     let timer: number;
     if (step === 'RECEIPT') {
@@ -207,14 +187,10 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
     }
   }, [step, settings.audioGuide, status]);
 
-  // Dynamic Styles
-  const containerClass = `min-h-screen w-full flex flex-col transition-colors duration-300 ${settings.highContrast ? 'bg-black text-yellow-400' : 'bg-slate-50 text-slate-900'
     }`;
 
   const headingClass = `font-bold mb-6 ${settings.largeText ? 'text-5xl' : 'text-3xl'}`;
   const textClass = `mb-4 ${settings.largeText ? 'text-2xl' : 'text-lg'}`;
-
-  // --- Screens ---
 
   if (status === 'CONNECTING' || status === 'AUTHENTICATING') {
     return (
@@ -227,8 +203,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
         )}
       </div>
     );
-  }
-
   if (status === 'OFFLINE') {
     return (
       <div className="min-h-screen bg-red-900 flex flex-col items-center justify-center text-white p-8 text-center">
@@ -256,8 +230,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
       </div>
     );
   }
-
-  // Voting Screens
 
   const renderWelcome = () => (
     <div className="flex flex-col items-center justify-center flex-1 p-8 text-center animate-fade-in">
@@ -525,7 +497,6 @@ export const PollingBooth: React.FC<PollingBoothProps> = ({ onExit }) => {
 
   return (
     <main className={containerClass} role="main" aria-live="polite">
-      {/* Top Bar Status */}
       <div className="absolute top-4 right-4 flex gap-2 z-50">
         {status === 'ONLINE' && (
           <div className="hidden sm:flex items-center gap-2 px-3 py-1 bg-white/10 rounded-full text-xs font-mono opacity-50">

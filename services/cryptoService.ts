@@ -1,5 +1,4 @@
 export class CryptoService {
-  // Generate RSA-OAEP KeyPair for Asymmetric Encryption
   async generateKeyPair(): Promise<CryptoKeyPair> {
     return await window.crypto.subtle.generateKey(
       {
@@ -13,12 +12,10 @@ export class CryptoService {
     );
   }
 
-  // Export Key to JWK (JSON Web Key) format for storage/transmission
   async exportKey(key: CryptoKey): Promise<JsonWebKey> {
     return await window.crypto.subtle.exportKey("jwk", key);
   }
 
-  // Import Key from JWK
   async importKey(jwk: JsonWebKey, type: 'public' | 'private'): Promise<CryptoKey> {
     return await window.crypto.subtle.importKey(
       "jwk",
@@ -32,7 +29,6 @@ export class CryptoService {
     );
   }
 
-  // Encrypt data (Client side uses Public Key)
   async encrypt(data: string, publicKey: CryptoKey): Promise<string> {
     const encoder = new TextEncoder();
     const encodedData = encoder.encode(data);
@@ -43,11 +39,9 @@ export class CryptoService {
       encodedData
     );
 
-    // Convert to Base64 string
     return this.arrayBufferToBase64(encryptedBuffer);
   }
 
-  // Decrypt data (Server side uses Private Key)
   async decrypt(encryptedBase64: string, privateKey: CryptoKey): Promise<string> {
     const encryptedData = this.base64ToArrayBuffer(encryptedBase64);
     
@@ -61,7 +55,6 @@ export class CryptoService {
     return decoder.decode(decryptedBuffer);
   }
 
-  // Helper: SHA-256 Hash for Receipts
   async hash(data: string): Promise<string> {
     const encoder = new TextEncoder();
     const dataBuffer = encoder.encode(data);
