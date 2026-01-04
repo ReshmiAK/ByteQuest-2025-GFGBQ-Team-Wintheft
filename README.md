@@ -141,6 +141,12 @@ Limitations
 - Eye tracking uses MediaPipe FaceMesh and assumes good lighting and a visible face.
 - There is no backend server or database; everything is local to the browser where the demo is running.
 - This codebase is for demonstration and educational purposes only and is **not** intended for production election systems.
+  
+ Contributors Note
+-----------------
+Some initial project scaffolding was generated using automated tools.
+Core logic, features, and implementation were designed and developed by the team.
+
 
 License
 -------
